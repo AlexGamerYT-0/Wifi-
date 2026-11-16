@@ -1,0 +1,42 @@
+name: Publicar web
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.dep.outputs.page_url }}
+    env:
+      FB_API_KEY: ${{ secrets.FB_API_KEY }}
+      FB_AUTH_DOMAIN: ${{ secrets.FB_AUTH_DOMAIN }}
+      FB_PROJECT_ID: ${{ secrets.FB_PROJECT_ID }}
+      FB_APP_ID: ${{ secrets.FB_APP_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Descomprimir ZIP
+        run: |
+          unzip -q AlexGamerYT-WiFi-Access.zip -d tmp
+          mv tmp/AlexGamerYT-WiFi-Access site
+      - name: Crear config de Firebase
+        run: |
+          cat > site/firebase/config.js <<EOF
+          window.FIREBASE_CONFIG = {
+            apiKey: "$FB_API_KEY",
+            authDomain: "$FB_AUTH_DOMAIN",
+            projectId: "$FB_PROJECT_ID",
+            appId: "$FB_APP_ID"
+          };
+          EOF
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: dep
+        uses: actions/deploy-pages@v4
